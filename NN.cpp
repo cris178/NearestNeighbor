@@ -495,6 +495,7 @@ void fowardSelection(vector<instance> dataSet)
                 //features.printFeatures();
             }
         }
+
         temp = greedyFeaturesQueue.top();
         cout << "Current Top Node is:" << endl;
         temp.printFeatures();
@@ -507,7 +508,7 @@ void fowardSelection(vector<instance> dataSet)
             cout << "***\n";
         }
         temp.printFeatures();
-        push.push_back(i); //
+        push.push_back(i); //<-------------Problem Might be here!!!! When do we push the new feature that has best accuracy
         cout << "----- New Row Beginning!" << endl
              << endl;
 
@@ -515,9 +516,10 @@ void fowardSelection(vector<instance> dataSet)
         while (!greedyFeaturesQueue.empty()) //clear entire queue, only concerned with highest %
         {
             cout << "Clearing QUEUE" << endl;
+            cout << greedyFeaturesQueue.top().accurate << " | " << endl;
             greedyFeaturesQueue.pop();
-            cout << "\n\n";
         }
+        cout << "\n\n";
     }
 
     cout << "Best features are ";
