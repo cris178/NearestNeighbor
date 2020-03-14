@@ -69,15 +69,10 @@ First Column    Rest of the Columns features    F2                  F3  F4
 class Node
 {
 private:
+public:
     double accurate = 0;
     vector<int> featuresIncluded;
-
-public:
     //comparator
-    const bool operator<(const Node &rhs) const //comparator operator for p queue
-    {
-        return accurate < rhs.accurate;
-    }
 
     //The index position will be stored
     void printFeatures()
@@ -104,7 +99,7 @@ public:
 
     void setAccurate(double val)
     {
-        accurate = val;
+        this->accurate = val;
         return;
     }
     double getAccurate()
@@ -191,11 +186,13 @@ double eucleadianDistance(instance testSet, instance trainingSet, vector<int> fe
     //We will only test the features currently being tested.
     for (int i = 0; i < featureSet.size(); i++)
     {
+        //cout << "currently subtracting " << testSet.getFeature(featureSet.at(i)) << " from " << trainingSet.getFeature(featureSet.at(i)) << endl;
         distance += pow((testSet.getFeature(featureSet.at(i)) - trainingSet.getFeature(featureSet.at(i))), 2);
     }
-
+    distance = sqrt(distance);
     //cout << "Distance being square rooted!" << distance << endl;
     //distance = sqrt(distance);
+    //cout << "returning distance: " << distance << endl;
     return distance;
 }
 
@@ -208,15 +205,20 @@ double NearestNeighbor(vector<int> featureSet, vector<instance> dataSet)
     //Iterate througheach datapoint(instance) calculate eucledian distance to each point
     //K should be odd if classifying two classes
     //K shouldn't be a multiple of number of classes
-    int correct;
+    double correct;
     double totCount;
+
+    cout << "-------------" << endl;
 
     //This will do all possible training getting one instance and testing it with the rest of the data set
     //i is the current instance that will be tested
     for (int i = 0; i < dataSet.size(); i++)
     {
-        double distance = 100; //smallest distance will determine the class. Set to MAX int value so first run sets smallest ditance appropriately
+
+        double distance = 500; //smallest distance will determine the class. Set to MAX int value so first run sets smallest ditance appropriately
         instance NN;           //Once we find the nearest neighbor set NN as that nearest neighbor
+
+        //correct = 0;  <---------------CHECK IF CORRECT HAS TO BE HERE ISSUE IS ACCURACY
 
         //Test instance slice i against the rest of the dataset
         for (int j = 0; j < dataSet.size(); j++)
@@ -227,12 +229,28 @@ double NearestNeighbor(vector<int> featureSet, vector<instance> dataSet)
             }
             else
             {
+                /*
+                cout << "Testing features: " << endl;
+                for (int y = 0; y < featureSet.size(); y++)
+                {
+                    cout << featureSet.at(y) << " ";
+                }
+                cout << endl;
+
+                cout << "Against Testing Set: " << i << endl;
+                dataSet.at(i).printFeatures();
+
+                cout << "Training set: " << j << endl;
+                dataSet.at(j).printFeatures();
+                */
                 double currentDistance = eucleadianDistance(dataSet.at(i), dataSet.at(j), featureSet);
 
                 //A new nearest neighbor is found, mark this as the closest distance to our unlabeled datapoint
                 //And set the nearest neighbors class as our predicted class label to the unlabled data point
                 if (currentDistance < distance)
                 {
+                    //cout << "------ New Nearest Neighbor found--- " << j << endl;
+                    //cout << currentDistance << endl;
                     distance = currentDistance;
                     NN.setClass(dataSet.at(j).getClass()); //This is currently the closest datapoint to our testing point.  Update our predicted clas each time a closer neighbor is found
                 }
@@ -248,15 +266,17 @@ double NearestNeighbor(vector<int> featureSet, vector<instance> dataSet)
         totCount++;
     }
 
+    cout << "-------------" << endl;
     //In the end we check our classifiers accuracy that used a certain set of features
     cout << "Total Count is: " << totCount << endl;
+    cout << "Correct Count is: " << correct << endl;
     double accuracy = (correct / dataSet.size());
     //double accuracy = (correct / totCount);
     return accuracy;
 }
 
 //This function normalizes the dataset
-void Normalize(vector<instance> &dataSet)
+void Normalize(vector<instance> &dataSet) //pass by refrence or change won't take effect
 {
     //For each feature column, calculate the mean and standard deviation,
     //then replace each element x of that column with (x - mean)/std. Repeat for each column.
@@ -283,16 +303,15 @@ void Normalize(vector<instance> &dataSet)
         }
     }
 
-    cout << "Mean for each column: " << endl;
+    //cout << "Mean for each column: " << endl;
     //Mean is sum of numbers / tot numbers
     //Sum of col features / datasetSize()
     for (int i = 0; i < dataSet.at(0).getFeatureSize(); i++)
     {
         mean.at(i) = (sum.at(i) / dataSet.size());
-        cout << mean.at(i) << " | ";
+        //cout << mean.at(i) << " | ";
     }
-    cout << endl
-         << endl;
+    //cout << endl<< endl;
 
     //Finding the standard deviation
     //https://www.khanacademy.org/math/probability/data-distributions-a1/summarizing-spread-distributions/a/calculating-standard-deviation-step-by-step
@@ -311,14 +330,13 @@ void Normalize(vector<instance> &dataSet)
 
     //Display stdDev for each column
 
-    cout << "Standard Deviation is for each column is:" << endl;
+    //cout << "Standard Deviation is for each column is:" << endl;
     for (int i = 0; i < stdDev.size(); i++)
     {
         stdDev.at(i) = sqrt(stdDev.at(i));
-        cout << stdDev.at(i) << " | ";
+        //cout << stdDev.at(i) << " | ";
     }
-    cout << endl
-         << endl;
+    //cout << endl << endl;
 
     //Replace each value x in the dataset
     //Iterate through the list of instances
@@ -384,15 +402,19 @@ vector<instance> getData(string fileName)
 
     return dataSet;
 }
-/*
-struct CustomCompare
+
+struct Manhatten
 {
-    bool operator()(const Node *lhs, const Node *rhs) const
+    //Overide
+    bool operator()(const Node lhs, const Node rhs)
     {
 
-        return (lhs->getAccurate()) < (rhs->getAccurate());
+        //reuse comparator code from eight puzzle
+        return (lhs.accurate < rhs.accurate);
     }
 };
+
+/*
 */
 // This function finds classification of point p using
 // k nearest neighbour algorithm. It assumes only two
@@ -406,11 +428,12 @@ struct CustomCompare
 -Return class label of nearest training point
 */
 
+//Not hasn't been passed by refence... check on later
 void fowardSelection(vector<instance> dataSet)
 {
     //http: //www.cplusplus.com/reference/queue/priority_queue/priority_queue/
-    priority_queue<Node> greedyFeaturesQueue; //As we go foward the greedy search will get the node with the best accuracy
-    int accuracyMax;                          //Holds current best accuracyScore
+    priority_queue<Node, std::vector<Node>, Manhatten> greedyFeaturesQueue; //As we go foward the greedy search will get the node with the best accuracy
+    int accuracyMax;                                                        //Holds current best accuracyScore
 
     Node max;
     max.setAccurate(0);
@@ -418,10 +441,11 @@ void fowardSelection(vector<instance> dataSet)
     Node temp;
 
     //This is the first node with an empty set of features.
-    temp.setAccurate(NearestNeighbor(temp.returnFeatures(), dataSet));
-    temp.printFeatures();
+    //temp.setAccurate(NearestNeighbor(temp.returnFeatures(), dataSet));
+    //temp.printFeatures();
 
     vector<int> push;
+    //push.resize(dataSet.at(0).getFeatureSize(), 0);
 
     //We will continue, add a feature, select the node with the best accuracy, add a feature and continue
 
@@ -429,6 +453,7 @@ void fowardSelection(vector<instance> dataSet)
 
     //double FREE ERROR, deleting something twice in queue
     ///https://stackoverflow.com/questions/14063791/double-free-or-corruption-after-queuepush
+
     for (int i = 0; i < dataSet.at(0).getFeatureSize(); i++) //For each of the 10 features, make a node
     {
 
@@ -439,7 +464,10 @@ void fowardSelection(vector<instance> dataSet)
             double accuracyScore;
             features = push; //Overload assignment operator add extra features.
             //cout << "About to start entering data" << endl;
+
             //Big if check looking for repeated features
+            //This just sets a flag to find accuracy of current features in features vector
+            //If current feature is already in features vector skip trying to test against classifier
             for (int l = 0; l < features.size(); l++)
             {
                 if (j == features.at(l))
@@ -453,11 +481,13 @@ void fowardSelection(vector<instance> dataSet)
             if (check == false)
             {
                 features.push_back(j); //Pushing back the index of the features we are testing
+                cout << "Entering Nearest Neighbor" << endl;
                 accuracyScore = NearestNeighbor(features, dataSet);
                 Node tempSet; //Make node here to avoid double corruption issues
                 tempSet.setFeatures(features);
+                cout << "ACCURACY SCORE RETURNED BY NN " << accuracyScore << endl;
                 tempSet.setAccurate(accuracyScore);
-                cout << "Level " << i << "Node: ";
+                cout << "Level " << i << " Node: ";
                 tempSet.printFeatures();
                 greedyFeaturesQueue.push(tempSet);
 
@@ -466,6 +496,9 @@ void fowardSelection(vector<instance> dataSet)
             }
         }
         temp = greedyFeaturesQueue.top();
+        cout << "Current Top Node is:" << endl;
+        temp.printFeatures();
+
         if (temp.getAccurate() > max.getAccurate())
         {
             max = temp;
@@ -481,6 +514,7 @@ void fowardSelection(vector<instance> dataSet)
         //Only want best accuracy for the current expanded row not from entire node tree
         while (!greedyFeaturesQueue.empty()) //clear entire queue, only concerned with highest %
         {
+            cout << "Clearing QUEUE" << endl;
             greedyFeaturesQueue.pop();
             cout << "\n\n";
         }
