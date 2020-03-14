@@ -147,11 +147,15 @@ public:
     {
         return classifier;
     }
-    void setClass(int settingClass)
+    void setClass(double settingClass)
     {
         classifier = settingClass;
     }
-    void setFeature(int feature)
+    void replace(int i, double feature)
+    {
+        features.at(i) = feature;
+    }
+    void setFeature(double feature)
     {
         features.push_back(feature);
     }
@@ -211,8 +215,8 @@ double NearestNeighbor(vector<int> featureSet, vector<instance> dataSet)
     //i is the current instance that will be tested
     for (int i = 0; i < dataSet.size(); i++)
     {
-        double distance = 2000; //smallest distance will determine the class. Set to MAX int value so first run sets smallest ditance appropriately
-        instance NN;            //Once we find the nearest neighbor set NN as that nearest neighbor
+        double distance = 100; //smallest distance will determine the class. Set to MAX int value so first run sets smallest ditance appropriately
+        instance NN;           //Once we find the nearest neighbor set NN as that nearest neighbor
 
         //Test instance slice i against the rest of the dataset
         for (int j = 0; j < dataSet.size(); j++)
@@ -251,10 +255,90 @@ double NearestNeighbor(vector<int> featureSet, vector<instance> dataSet)
     return accuracy;
 }
 
+//This function normalizes the dataset
+void Normalize(vector<instance> &dataSet)
+{
+    //For each feature column, calculate the mean and standard deviation,
+    //then replace each element x of that column with (x - mean)/std. Repeat for each column.
+
+    //To find mean sum the collection of numbers / number of numbers
+    vector<double> sum;
+    sum.resize(dataSet.at(0).getFeatureSize(), 0);
+    vector<double> mean;
+    mean.resize(dataSet.at(0).getFeatureSize(), 0);
+    vector<double> stdDev;
+    stdDev.resize(dataSet.at(0).getFeatureSize(), 0);
+    double n = 0; //number of numbers in column
+
+    //cout << "Goin through " << dataSet.size() << " instances." << endl;
+
+    //Iterate through the list of instances
+    for (int i = 0; i < dataSet.size(); i++)
+    {
+        //For each instance iterate through features
+        //Each column needs to be summed up
+        for (int j = 0; j < dataSet.at(0).getFeatureSize(); j++)
+        {
+            sum.at(j) += dataSet.at(i).getFeature(j);
+        }
+    }
+
+    cout << "Mean for each column: " << endl;
+    //Mean is sum of numbers / tot numbers
+    //Sum of col features / datasetSize()
+    for (int i = 0; i < dataSet.at(0).getFeatureSize(); i++)
+    {
+        mean.at(i) = (sum.at(i) / dataSet.size());
+        cout << mean.at(i) << " | ";
+    }
+    cout << endl
+         << endl;
+
+    //Finding the standard deviation
+    //https://www.khanacademy.org/math/probability/data-distributions-a1/summarizing-spread-distributions/a/calculating-standard-deviation-step-by-step
+
+    //With it's j mean
+    //Calculate staDeviation for feature column
+    for (int i = 0; i < dataSet.size(); i++)
+    {
+        //For each instance iterate through features
+        //Each column needs to be summed up
+        for (int j = 0; j < dataSet.at(0).getFeatureSize(); j++)
+        {
+            stdDev.at(j) += (pow(abs(dataSet.at(i).getFeature(j) - mean.at(j)), 2)) / dataSet.size();
+        }
+    }
+
+    //Display stdDev for each column
+
+    cout << "Standard Deviation is for each column is:" << endl;
+    for (int i = 0; i < stdDev.size(); i++)
+    {
+        stdDev.at(i) = sqrt(stdDev.at(i));
+        cout << stdDev.at(i) << " | ";
+    }
+    cout << endl
+         << endl;
+
+    //Replace each value x in the dataset
+    //Iterate through the list of instances
+    //Replace each feature at position (j)
+    for (int i = 0; i < dataSet.size(); i++)
+    {
+        //For each instance iterate through features
+        //replace the value in that feature by (x-mean)/std deviation
+        for (int j = 0; j < dataSet.at(0).getFeatureSize(); j++)
+        {
+            dataSet.at(i).replace(j, ((dataSet.at(i).getFeature(j) - mean.at(j)) / stdDev.at(j)));
+        }
+    }
+}
+
 //Function returns a vector full of the dataset
 //https://stackoverflow.com/questions/7880/how-do-you-open-a-file-in-c
 //https://stackoverflow.com/questions/20739453/using-getline-with-file-input-in-c
 //https://stackoverflow.com/questions/1710447/string-in-scientific-notation-c-to-double-conversion //NORMALIZATION?
+//https://stackoverflow.com/questions/9411118/convert-scientific-notation-to-decimal-in-c
 vector<instance> getData(string fileName)
 {
     ifstream inFile;
@@ -266,29 +350,28 @@ vector<instance> getData(string fileName)
     vector<instance> dataSet; //Data set that we will return
     string line;
     string temp;
-    double classHold;
-    double feature;
-    string see;
+    string classHold;
+    string feature;
     while (getline(inFile, line))
     {
         instance row; // During each line create a new instance node and save the line data in it, put it in the data set vector.
-        see = line;
-        //cout << "SEE " << see << endl;
+
         stringstream streamLine(line); //Input stream class to operate on strings.
-        //cout << "Line: " << line << endl;
-        //cout << "Pasrsing line " << line << endl;
+        //cout << "SS line: " << line << endl;
         // streamLine >> see;
         //cout << "IN SEE: " << see << endl;
-        streamLine >> temp; //The first value will always be the class
-        //cout << "Class before placed in instance: " << classHold << endl;
-        classHold = atof(temp);
-        cout << "TEMP = " << temp << endl;
-        cout << "CLASS HOLD=" << classHold << endl;
-        row.setClass(classHold);
+        streamLine >> classHold; //The first value will always be the class
+                                 //cout << "Hold: " << classHold << endl;
+                                 //cout << "Class before placed in instance: " << classHold << endl;
+                                 //classHold = atof(temp);
+                                 //cout << "TEMP = " << temp << endl;
+                                 //cout << "CLASS HOLD=" << classHold << endl;
+
+        row.setClass(stod(classHold));
         while (streamLine >> feature)
         { //Parse the entire row, continue until end of line reached.
             //cout << "Features before placed in instance: " << feature << endl;
-            row.setFeature(feature);
+            row.setFeature(stod(feature));
         }
         dataSet.push_back(row);
     }
@@ -344,7 +427,7 @@ void fowardSelection(vector<instance> dataSet)
 
     cout << "DATASET FEATURES SIZE " << dataSet.at(0).getFeatureSize() << endl;
 
-    //DOUBLE FREE ERROR, deleting something twice in queue
+    //double FREE ERROR, deleting something twice in queue
     ///https://stackoverflow.com/questions/14063791/double-free-or-corruption-after-queuepush
     for (int i = 0; i < dataSet.at(0).getFeatureSize(); i++) //For each of the 10 features, make a node
     {
@@ -366,6 +449,7 @@ void fowardSelection(vector<instance> dataSet)
             }
 
             //This check makes sure we don't put in same feature index twice
+            //set feature pushes back to vector, it doesn't replace
             if (check == false)
             {
                 features.push_back(j); //Pushing back the index of the features we are testing
@@ -418,6 +502,8 @@ int main()
     //Make sure to get each row into the dataSet
     vector<instance> dataSet = getData(fileName);
 
+    cout << "Successfully retrieved data." << endl;
+
     //Data points aka rows
     int numbInstances = dataSet.size();
 
@@ -428,7 +514,9 @@ int main()
     int counter = 0;
 
     cout << "\n\n";
+
     //Print The Entire Data Set
+    cout << "---Printing Data Set---" << endl;
     for (int i = 0; i < dataSet.size(); i++)
     {
         cout << "Line: " << i << endl;
@@ -437,7 +525,17 @@ int main()
     }
 
     cout << "The dataset has " << numbFeatures << " features (not including the class attribute) with " << numbInstances << " instances\n";
-    cout << "Normalized data ...\n";
+    cout << "Normalizing data ...\n";
+    Normalize(dataSet);
+
+    //Print The Entire Data Set
+    cout << "---Printing Normalized Data Set---" << endl;
+    for (int i = 0; i < dataSet.size(); i++)
+    {
+        cout << "Line: " << i << endl;
+        cout << "Class: " << dataSet.at(i).getClass() << " Features: ";
+        dataSet.at(i).printFeatures();
+    }
 
     int choice = 0;
     while (choice <= 0 || choice > 3)
