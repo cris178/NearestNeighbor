@@ -77,12 +77,12 @@ public:
     //The index position will be stored
     void printFeatures()
     {
-        cout << "Features Index: {";
+        cout << "Feature set: {";
         for (int i = 0; i < featuresIncluded.size(); i++)
         {
             cout << featuresIncluded.at(i) << ",";
         }
-        cout << "} with accuracy " << accurate << endl;
+        cout << "} was best, with accuracy " << accurate << endl;
         return;
     }
 
@@ -208,7 +208,7 @@ double NearestNeighbor(vector<int> featureSet, vector<instance> dataSet)
     double correct;
     double totCount;
 
-    cout << "-------------" << endl;
+    //cout << "-------------" << endl;
 
     //This will do all possible training getting one instance and testing it with the rest of the data set
     //i is the current instance that will be tested
@@ -226,6 +226,7 @@ double NearestNeighbor(vector<int> featureSet, vector<instance> dataSet)
             if (j == i)
             {
                 //Do nothing if get to instance i that is currently being tested against the dataset
+                continue;
             }
             else
             {
@@ -266,11 +267,16 @@ double NearestNeighbor(vector<int> featureSet, vector<instance> dataSet)
         totCount++;
     }
 
-    cout << "-------------" << endl;
+    //cout << "-------------" << endl;
     //In the end we check our classifiers accuracy that used a certain set of features
-    cout << "Total Count is: " << totCount << endl;
-    cout << "Correct Count is: " << correct << endl;
     double accuracy = (correct / dataSet.size());
+    //cout << "Total Count is: " << totCount << endl;
+
+    /*
+    cout << "Correct Count is: " << correct << endl;
+    cout << "Accuracy: " << accuracy << "\n\n";
+    */
+
     //double accuracy = (correct / totCount);
     return accuracy;
 }
@@ -395,10 +401,11 @@ vector<instance> getData(string fileName)
     }
 
     inFile.close();
+    /*
     for (int i = 0; i < dataSet.size(); i++)
     {
         dataSet.at(i).printFeatures();
-    }
+    }*/
 
     return dataSet;
 }
@@ -480,16 +487,28 @@ void fowardSelection(vector<instance> dataSet)
             //set feature pushes back to vector, it doesn't replace
             if (check == false)
             {
+                //cout << "----------------------\n\n";
                 features.push_back(j); //Pushing back the index of the features we are testing
-                cout << "Entering Nearest Neighbor" << endl;
+
+                //Display the current node of features being tested
+                cout << "\tCurrent Node Features: " << endl;
+                cout << "\t";
+                for (int x = 0; x < features.size(); x++)
+                {
+                    cout << features.at(x) << " ";
+                }
+                cout << endl;
+
+                //cout << "Entering Nearest Neighbor" << endl;
                 accuracyScore = NearestNeighbor(features, dataSet);
                 Node tempSet; //Make node here to avoid double corruption issues
                 tempSet.setFeatures(features);
-                cout << "ACCURACY SCORE RETURNED BY NN " << accuracyScore << endl;
+                cout << "\tAccuracy is " << accuracyScore << endl;
                 tempSet.setAccurate(accuracyScore);
-                cout << "Level " << i << " Node: ";
-                tempSet.printFeatures();
+                //cout << "Level " << i << " Node: ";
+                //tempSet.printFeatures();
                 greedyFeaturesQueue.push(tempSet);
+                //cout << "----------------------\n\n";
 
                 // cout << "In iteration " << i << ", " << j << " the features currently in the vector are ";
                 //features.printFeatures();
@@ -497,8 +516,11 @@ void fowardSelection(vector<instance> dataSet)
         }
 
         temp = greedyFeaturesQueue.top();
-        cout << "Current Top Node is:" << endl;
+
+        cout << endl;
+        cout << "Best Feature Set and Accuracy to Expand" << endl;
         temp.printFeatures();
+        cout << endl;
 
         if (temp.getAccurate() > max.getAccurate())
         {
@@ -507,19 +529,20 @@ void fowardSelection(vector<instance> dataSet)
             max.printFeatures();
             cout << "***\n";
         }
-        temp.printFeatures();
-        push.push_back(i); //<-------------Problem Might be here!!!! When do we push the new feature that has best accuracy
-        cout << "----- New Row Beginning!" << endl
-             << endl;
+        /*
+        cout << "MAX Node is: " << endl;
+        max.printFeatures();
+        */
+
+        push = temp.featuresIncluded; //<-------------Problem Might be here!!!! When do we push the new feature that has best accuracy
 
         //Only want best accuracy for the current expanded row not from entire node tree
         while (!greedyFeaturesQueue.empty()) //clear entire queue, only concerned with highest %
         {
-            cout << "Clearing QUEUE" << endl;
-            cout << greedyFeaturesQueue.top().accurate << " | " << endl;
+            //cout << "Clearing QUEUE" << endl;
+            //cout << greedyFeaturesQueue.top().accurate << " | " << endl;
             greedyFeaturesQueue.pop();
         }
-        cout << "\n\n";
     }
 
     cout << "Best features are ";
@@ -552,6 +575,7 @@ int main()
     cout << "\n\n";
 
     //Print The Entire Data Set
+    /*
     cout << "---Printing Data Set---" << endl;
     for (int i = 0; i < dataSet.size(); i++)
     {
@@ -559,12 +583,14 @@ int main()
         cout << "Class: " << dataSet.at(i).getClass() << " Features: ";
         dataSet.at(i).printFeatures();
     }
+    */
 
     cout << "The dataset has " << numbFeatures << " features (not including the class attribute) with " << numbInstances << " instances\n";
     cout << "Normalizing data ...\n";
     Normalize(dataSet);
 
-    //Print The Entire Data Set
+    //Print The Entire Normalized Data Set
+    /*
     cout << "---Printing Normalized Data Set---" << endl;
     for (int i = 0; i < dataSet.size(); i++)
     {
@@ -572,7 +598,7 @@ int main()
         cout << "Class: " << dataSet.at(i).getClass() << " Features: ";
         dataSet.at(i).printFeatures();
     }
-
+    */
     int choice = 0;
     while (choice <= 0 || choice > 3)
     {
