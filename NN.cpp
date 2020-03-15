@@ -549,6 +549,138 @@ void fowardSelection(vector<instance> dataSet)
     max.printFeatures();
 }
 
+//Backward selection instead of building up the best possible feature set
+//removes features to acheive the best feature set
+void backwardElimination(vector<instance> dataSet)
+{
+    //As we remove nodes we will still want to keep a list of the nodes
+    //With the best accuracy.
+    priority_queue<Node, std::vector<Node>, Manhatten> greedyFeaturesQueue;
+
+    int accuracyMax = 0; //Holds current best accuracyScore
+    int position = 0;
+    Node max;
+    max.setAccurate(0);
+    //Will hold the features
+    Node temp;
+
+    vector<int> push;
+
+    //The features that are going to be pushed should be same size as the feature set in the instances
+    for (int i = 0; i < dataSet.at(0).getFeatureSize(); ++i)
+    {
+        push.push_back(i);
+        cout << push.at(i) << endl;
+    }
+
+    cout << "DATASET FEATURES SIZE " << dataSet.at(0).getFeatureSize() << endl;
+    cout << "Initial Start is: " << endl;
+    for (int i = 0; i < push.size(); i++)
+    {
+        cout << push.at(i) << " ";
+    }
+    cout << endl;
+
+    max.setAccurate(NearestNeighbor(push, dataSet));
+    max.featuresIncluded = push;
+
+    max.printFeatures();
+
+    for (int i = 0; i < dataSet.at(0).getFeatureSize(); i++) //For each of the 10 features, make a node
+    {
+
+        for (int j = 0; j < dataSet.at(0).getFeatureSize(); j++)
+        {
+
+            bool check = false;
+            vector<int> features; //A new node is created each time
+            double accuracyScore;
+            features = push; //Overload assignment operator add extra features.
+            //cout << "About to start entering data" << endl;
+            //cout << "Made it before check" << endl;
+            //Big if check looking for repeated features
+            //This just sets a flag to find accuracy of current features in features vector
+            //If current feature is already in features vector skip trying to test against classifier
+
+            for (int l = 0; l < features.size(); l++)
+            {
+                //cout << "Check if " << l << "is in feature set " << features.at(l) << endl;
+                if (j == features.at(l)) //Only remove features if they
+                {                        //Iterate through entire list of features make sure current feature index not in
+
+                    //cout << "IT IS" << endl;
+                    check = true; //If in list then we want to remove it
+                    position = l;
+                }
+            }
+
+            //This check is to see if j is in feature list so we can remove it
+            if (check == true)
+            {
+                //cout << "Removing J from node" << j << endl;
+                //cout << "----------------------\n\n";
+                //instead of pushing a feature, remove feature j
+                //cout << "Erasing feature: " << j << endl;
+                features.erase(features.begin() + position); //Delete one value at a  time
+                //features.push_back(j); //Pushing back the index of the features we are testing
+                //Display the current node of features being tested
+                cout << "\tCurrent Node Features: " << endl;
+                cout << "\t";
+                for (int x = 0; x < features.size(); x++)
+                {
+                    cout << features.at(x) << " | ";
+                }
+                cout << endl;
+
+                //cout << "Entering Nearest Neighbor" << endl;
+                accuracyScore = NearestNeighbor(features, dataSet);
+                Node tempSet; //Make node here to avoid double corruption issues
+                tempSet.setFeatures(features);
+                cout << "\tAccuracy is " << accuracyScore << "\n\n";
+                tempSet.setAccurate(accuracyScore);
+                //cout << "Level " << i << " Node: ";
+                //tempSet.printFeatures();
+                greedyFeaturesQueue.push(tempSet);
+                //cout << "----------------------\n\n";
+
+                // cout << "In iteration " << i << ", " << j << " the features currently in the vector are ";
+                //features.printFeatures();
+            }
+        }
+
+        temp = greedyFeaturesQueue.top();
+
+        cout << endl;
+        cout << "Best Feature Set and Accuracy to Expand" << endl;
+        temp.printFeatures();
+
+        if (temp.getAccurate() > max.getAccurate())
+        {
+            max = temp;
+            cout << "**New Max Accuracy Found** ";
+            max.printFeatures();
+            cout << "\n";
+        }
+        /*
+        cout << "MAX Node is: " << endl;
+        max.printFeatures();
+        */
+
+        push = temp.featuresIncluded; //<-------------Problem Might be here!!!! When do we push the new feature that has best accuracy
+
+        //Only want best accuracy for the current expanded row not from entire node tree
+        while (!greedyFeaturesQueue.empty()) //clear entire queue, only concerned with highest %
+        {
+            //cout << "Clearing QUEUE" << endl;
+            //cout << greedyFeaturesQueue.top().accurate << " | " << endl;
+            greedyFeaturesQueue.pop();
+        }
+    }
+
+    cout << "Best features are ";
+    max.printFeatures();
+}
+
 int main()
 {
     string fileName;
@@ -614,7 +746,7 @@ int main()
     {
     case 1:
         cout << "Selected Foward Selection\n";
-        cout << "Training Classifier...\n";
+        //cout << "Training Classifier...\n";
         //NearestNeighbor(dataSet);
         cout << "Applying Foward Selection...\n";
         fowardSelection(dataSet);
@@ -623,9 +755,10 @@ int main()
         //double total = counter / numbInstances;
         break;
     case 2:
-        cout << "Selected backward selection\n";
+        cout << "Selected Backward Selection\n";
         //Train Classifier
         //Then test using Backward Selection
+        backwardElimination(dataSet);
         break;
     case 3:
         cout << "Selected special algorithim\n";
